@@ -115,30 +115,54 @@ def test_get_events_and_stats_consistency():
         assert len(events["events"]) == 2
 
 
-def test_small_stress_batch_time():
+def test_scale_processing_with_duplicates():
     with TestClient(app) as client:
-        batch_size = 100
+        total_events = 5000
+        duplicate_ratio = 0.2
+        num_duplicates = int(total_events * duplicate_ratio)
+        num_unique = total_events - num_duplicates
+
         events = []
-        for i in range(batch_size):
+        for i in range(num_unique):
             events.append(
                 {
-                    "topic": "stress_topic",
-                    "event_id": f"stress-{i}",
+                    "topic": "scale_topic",
+                    "event_id": f"scale-{i}",
                     "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-                    "source": "test",
+                    "source": "scale-test",
                     "payload": {},
                 }
             )
 
-        start_time = time.time()
-        resp = client.post("/publish", json=events)
-        elapsed_publish = time.time() - start_time
+        for i in range(num_duplicates):
+            events.append(
+                {
+                    "topic": "scale_topic",
+                    "event_id": f"scale-{i}",
+                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                    "source": "scale-test",
+                    "payload": {},
+                }
+            )
 
-        assert resp.status_code == 200
-        assert elapsed_publish < 1.0
+        batch_size = 500
+        for i in range(0, total_events, batch_size):
+            batch = events[i : i + batch_size]
+            resp = client.post("/publish", json=batch)
+            assert resp.status_code == 200
 
-        time.sleep(1.0)
+        max_wait = 10.0
+        start_wait = time.time()
+        while time.time() - start_wait < max_wait:
+            stats = client.get("/stats").json()
+            if (
+                stats["received"] >= total_events
+                and stats["unique_processed"] >= num_unique
+            ):
+                break
+            time.sleep(0.5)
 
         stats = client.get("/stats").json()
-        assert stats["received"] >= batch_size
-        assert stats["unique_processed"] >= batch_size
+        assert stats["received"] >= total_events
+        assert stats["unique_processed"] >= num_unique
+        assert stats["duplicate_dropped"] >= num_duplicates
