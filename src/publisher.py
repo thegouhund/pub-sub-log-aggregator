@@ -61,29 +61,6 @@ async def send_batch():
         print("Sent Batch Events:", resp.json())
 
 
-async def send_duplicate_batch():
-    async with httpx.AsyncClient() as client:
-        print("\n--- sending duplicate batch event ---")
-        batch = [
-            {
-                "topic": "system_metrics",
-                "event_id": str(uuid.uuid4()),
-                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-                "source": "server_monitor",
-                "payload": {"cpu_load": 45, "ram_usage": 60},
-            },
-            {
-                "topic": "system_metrics",
-                "event_id": str(uuid.uuid4()),
-                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-                "source": "server_monitor",
-                "payload": {"cpu_load": 50, "ram_usage": 61},
-            },
-        ]
-        resp = await client.post(f"{API_URL}/publish", json=batch)
-        print("Sent Batch Events (Duplicate):", resp.json())
-
-
 async def check_stats():
     async with httpx.AsyncClient() as client:
         print("\n--- system stats ---")

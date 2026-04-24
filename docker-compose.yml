@@ -12,12 +12,11 @@ services:
       
   publisher:
     build: .
-    command: ["python", "-m", "src.publisher"]
+    command: ["tail", "-f", "/dev/null"]
     environment:
       - API_URL=http://aggregator:8080
     networks:
       - internal_net
-
 
 volumes:
   sqlite_data:
