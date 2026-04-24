@@ -61,6 +61,44 @@ async def send_batch():
         print("Sent Batch Events:", resp.json())
 
 
+async def send_scale_test():
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        print("\n--- sending scale test (5000 events, 20% duplicates) ---")
+        total_events = 5000
+        duplicate_ratio = 0.2
+        num_duplicates = int(total_events * duplicate_ratio)
+        num_unique = total_events - num_duplicates
+
+        events = []
+        for i in range(num_unique):
+            events.append(
+                {
+                    "topic": "scale_topic",
+                    "event_id": f"scale-{i}",
+                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                    "source": "scale-test",
+                    "payload": {},
+                }
+            )
+
+        for i in range(num_duplicates):
+            events.append(
+                {
+                    "topic": "scale_topic",
+                    "event_id": f"scale-{i}",
+                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                    "source": "scale-test",
+                    "payload": {},
+                }
+            )
+
+        batch_size = 500
+        for i in range(0, total_events, batch_size):
+            batch = events[i : i + batch_size]
+            resp = await client.post(f"{API_URL}/publish", json=batch)
+            print(f"Sent batch {i} to {i+len(batch)}, status: {resp.status_code}")
+
+
 async def check_stats():
     async with httpx.AsyncClient() as client:
         print("\n--- system stats ---")

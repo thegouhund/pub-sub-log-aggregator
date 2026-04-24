@@ -115,7 +115,7 @@ def test_get_events_and_stats_consistency():
         assert len(events["events"]) == 2
 
 
-def test_scale_processing_with_duplicates():
+def test_stress_small_scale():
     with TestClient(app) as client:
         total_events = 100
         duplicate_ratio = 0.2
