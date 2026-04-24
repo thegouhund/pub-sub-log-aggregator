@@ -3,8 +3,21 @@ import os
 import time
 import pytest
 
+os.environ["DATABASE_PATH"] = "/tmp/test_events.db"
+
 from fastapi.testclient import TestClient
 from src.main import app
+
+
+@pytest.fixture(autouse=True)
+def cleanup_db():
+    if os.path.exists("/tmp/test_events.db"):
+        os.remove("/tmp/test_events.db")
+
+    yield
+
+    if os.path.exists("/tmp/test_events.db"):
+        os.remove("/tmp/test_events.db")
 
 
 def test_deduplication_validation():
