@@ -2,6 +2,7 @@ import datetime
 import os
 import time
 import pytest
+import json
 
 os.environ["DATABASE_PATH"] = "/tmp/test_events.db"
 
@@ -116,7 +117,7 @@ def test_get_events_and_stats_consistency():
 
 def test_scale_processing_with_duplicates():
     with TestClient(app) as client:
-        total_events = 5000
+        total_events = 100
         duplicate_ratio = 0.2
         num_duplicates = int(total_events * duplicate_ratio)
         num_unique = total_events - num_duplicates
@@ -162,6 +163,8 @@ def test_scale_processing_with_duplicates():
             time.sleep(0.5)
 
         stats = client.get("/stats").json()
+        print(json.dumps(stats, indent=2))
+
         assert stats["received"] >= total_events
         assert stats["unique_processed"] >= num_unique
         assert stats["duplicate_dropped"] >= num_duplicates

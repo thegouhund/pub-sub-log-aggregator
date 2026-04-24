@@ -9,20 +9,12 @@ services:
       - DATABASE_PATH=/app/data/events.db
     networks:
       - internal_net
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
+      
   publisher:
     build: .
     command: ["python", "-m", "src.publisher"]
     environment:
       - API_URL=http://aggregator:8080
-    depends_on:
-      aggregator:
-        condition: service_healthy
     networks:
       - internal_net
 
