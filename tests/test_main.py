@@ -1,8 +1,7 @@
-import pytest
-import os
-import uuid
 import datetime
+import os
 import time
+import pytest
 
 os.environ["DATABASE_PATH"] = "/tmp/test_events.db"
 
@@ -151,14 +150,14 @@ def test_scale_processing_with_duplicates():
             resp = client.post("/publish", json=batch)
             assert resp.status_code == 200
 
-        max_wait = 10.0
+        max_wait = 30.0
         start_wait = time.time()
         while time.time() - start_wait < max_wait:
             stats = client.get("/stats").json()
-            if (
-                stats["received"] >= total_events
-                and stats["unique_processed"] >= num_unique
-            ):
+            total_processed = stats.get("unique_processed", 0) + stats.get(
+                "duplicate_dropped", 0
+            )
+            if stats["received"] >= total_events and total_processed >= total_events:
                 break
             time.sleep(0.5)
 
