@@ -13,15 +13,15 @@ Aplikasi ini menggunakan Dockerfile berbasis `python:3.11-slim` dan disetel agar
 
 1. Jalankan aggregator dan publisher:
    ```bash
-   docker-compose up -d --build
+   docker compose up -d --build
    ```
 2. Untuk melihat aktivitas API:
    ```bash
-   docker-compose logs -f
+   docker compose logs -f
    ```
 3. Menghentikan server:
    ```bash
-   docker-compose down
+   docker compose down
    ```
 
 ## Menjalankan Unit Tests (Pytest)
@@ -31,7 +31,7 @@ Proyek ini mencakup suite Unit Tests lengkap (berlokasi di folder `tests/`) yang
 Jalankan test langsung melalui runtime container:
 
 ```bash
-docker-compose exec aggregator python -m pytest -p no:cacheprovider tests/test_main.py -v
+docker compose exec aggregator python -m pytest -p no:cacheprovider tests/test_main.py -v
 ```
 
 ## Asumsi Desain
