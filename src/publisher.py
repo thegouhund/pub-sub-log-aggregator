@@ -35,6 +35,7 @@ async def send_duplicate_single():
             "payload": {"action": "login", "user_id": 123},
         }
         resp = await client.post(f"{API_URL}/publish", json=event_1)
+        resp = await client.post(f"{API_URL}/publish", json=event_1)
         print("Sent Event 1 (Duplicate):", resp.json())
 
 
@@ -96,7 +97,7 @@ async def send_scale_test():
         for i in range(0, total_events, batch_size):
             batch = events[i : i + batch_size]
             resp = await client.post(f"{API_URL}/publish", json=batch)
-            print(f"Sent batch {i} to {i+len(batch)}, status: {resp.status_code}")
+            print(f"Sent batch {i} to {i + len(batch)}, status: {resp.status_code}")
 
 
 async def check_stats():
