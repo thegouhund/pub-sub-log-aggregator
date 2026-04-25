@@ -19,9 +19,9 @@ Sistem _Event Aggregator_ adalah layanan berbasis REST API asinkron (dibangun me
 
 Desain _producer-consumer_ melalui Memory Queue menghasilkan kelebihan dan tantangan performa:
 
-- **Throughput Tinggi pada API**: Endpoint HTTP memindahkan data ke RAM (`asyncio.Queue`) secara konstan lalu mengembalikan sinyal sukses. Hal ini menghindari efek pemblokiran antrean I/O diska lokal.
-- **Titik Penumpukan (Bottleneck)**: Kinerja _background worker_ database yang tunggal adalah titik terlemah. Jika laju pesan lebih masif dari kecepatan _commit_ SQLite, _queue_ di memori RAM akan membengkak, meningkatkan ancaman kebocoran memori (OOM).
-- **Metrik Obeservabilitas**: API terekspos untuk `/stats` sehingga performa dapat diamati langsung lewat `received`, `unique_processed`, dan `duplicate_dropped`.
+- Throughput: Endpoint HTTP memindahkan data ke RAM (`asyncio.Queue`) secara konstan lalu mengembalikan sinyal sukses. Hal ini menghindari efek pemblokiran antrean I/O diska lokal.
+- Bottleneck: Kinerja _background worker_ database yang tunggal adalah titik terlemah. Jika laju pesan lebih masif dari kecepatan _commit_ SQLite, _queue_ di memori RAM akan membengkak, meningkatkan ancaman kebocoran memori (OOM).
+- Observability: API terekspos untuk `/stats` sehingga performa dapat diamati langsung lewat `received`, `unique_processed`, dan `duplicate_dropped`.
 
 ## 4. Keterkaitan ke Bab 1–7
 
@@ -35,7 +35,17 @@ _(Berdasarkan konsep umum Sistem Terdistribusi. Silakan rujuk kembali dengan buk
 - **Bab 6 (Sinkronisasi)**: Sinkronisasi waktu antar node dihindari. _Timestamp_ dikumpulkan dari waktu absolut masing-masing _publisher_ secara independen demi menoleransi hambatan pengurutan fisik (_clock skew_).
 - **Bab 7 (Konsistensi & Replikasi)**: Konsistensi data dalam kasus interaksi komponen dipertahankan melalui strategi keandalan pesan berbasis deduplikasi untuk menjamin jaminan semantik pengiriman _At-Least-Once Delivery_.
 
-## 5. Pengujian dan Validasi (Unit Testing)
+## 5. Konfigurasi Docker (Containerization)
+
+Sistem ini dibungkus menggunakan ekosistem Docker (`Dockerfile` dan `docker-compose.yml`) untuk memastikan portabilitas dan konsistensi lintas lingkungan operasi. Konfigurasi utamanya meliputi:
+
+- Isolasi Layanan: Proyek dipisah ke dalam dua layanan mandiri, yakni `aggregator` (Server API utama) dan `publisher` (Klien pengirim simulasi).
+- Private Networking: Kedua layanan saling berkomunikasi melalui jaringan virtual _bridge_ kustom (`internal_net`), menjaga keamanan jalur pertukaran data dari publik.
+- Data Persistence (Volume): Direktori database SQLite dihubungkan (di-_mount_) ke _Docker Volume_ mandiri bernama `sqlite_data`. Praktik ini memastikan data deduplikasi tidak ikut terhapus saat _container_ di-_restart_ maupun dihancurkan (_stateless container, stateful volume_).
+- Keamanan (Non-Root): _Image_ Python yang dibangun menggunakan pengguna berizin terbatas (`appuser`), sejalan dengan _security best practices_ untuk menghindari eksploitasi sistem.
+- Idle Publisher: Layanan `publisher` dipertahankan dalam kondisi _idle_ secara tak terbatas (`tail -f /dev/null`), agar dapat diakses menggunakan CLI untuk keperluan simulasi maupun _stress-testing_.
+
+## 6. Pengujian dan Validasi (Unit Testing)
 
 Untuk menjamin keandalan sistem terdistribusi, serangkaian _unit test_ otomatis (menggunakan kerangka kerja `pytest`) telah diimplementasikan di dalam proyek ini. Pengujian difokuskan pada pengecekan persistensi deduplikasi, keketatan struktur data, serta ketahanan beban (_stress test_).
 
