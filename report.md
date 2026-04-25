@@ -35,6 +35,24 @@ _(Berdasarkan konsep umum Sistem Terdistribusi. Silakan rujuk kembali dengan buk
 - **Bab 6 (Sinkronisasi)**: Sinkronisasi waktu antar node dihindari. _Timestamp_ dikumpulkan dari waktu absolut masing-masing _publisher_ secara independen demi menoleransi hambatan pengurutan fisik (_clock skew_).
 - **Bab 7 (Konsistensi & Replikasi)**: Konsistensi data dalam kasus interaksi komponen dipertahankan melalui strategi keandalan pesan berbasis deduplikasi untuk menjamin jaminan semantik pengiriman _At-Least-Once Delivery_.
 
+## 5. Pengujian dan Validasi (Unit Testing)
+
+Untuk menjamin keandalan sistem terdistribusi, serangkaian _unit test_ otomatis (menggunakan kerangka kerja `pytest`) telah diimplementasikan di dalam proyek ini. Pengujian difokuskan pada pengecekan persistensi deduplikasi, keketatan struktur data, serta ketahanan beban (_stress test_).
+
+Berikut adalah ringkasan penjelasan setiap fungsi tes beserta hasilnya:
+
+| Nama Pengujian                                     | Tujuan Pengujian                                                                                                                                                                     | Status Hasil |
+| :------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- |
+| `test_deduplication_validation`                    | Memastikan _event_ ganda dengan kombinasi `topic` dan `event_id` yang sama berhasil ditolak secara otomatis oleh sistem.                                                             | PASS         |
+| `test_deduplication_persistence_simulated_restart` | Mensimulasikan _shutdown_ dan _startup_ server untuk membuktikan bahwa fitur deduplikasi bersandar pada penyimpanan disk permanen (SQLite), bukan memori yang hilang saat _restart_. | PASS         |
+| `test_event_schema_validation`                     | Menjamin ketegasan skema API; aplikasi akan secara proaktif menolak _payload_ yang tidak lengkap (misal tanpa _timestamp_) dengan _error_ HTTP 422.                                  | PASS         |
+| `test_get_events_and_stats_consistency`            | Mengirim campuran pengiriman _batch_ (unik dan duplikat) untuk memverifikasi bahwa endpoint `/stats` melakukan kalkulasi JSON yang tepat matematis.                                  | PASS         |
+| `test_stress_small_scale`                          | Melakukan simulasi _stress test_ kecil (100 event) guna memastikan siklus antrean _producer-consumer_ tidak mogok (_hang_) ketika dihujani request yang berdekatan.                  | PASS         |
+
+## Video Demo
+
+https://www.youtube.com/watch?v=-KNiM8cA0AE
+
 ## Referensi
 
 Van Steen, M., & Tanenbaum, A. S. (2023). Distributed systems (4th ed.). Maarten van Steen. https://www.distributed-systems.net/
